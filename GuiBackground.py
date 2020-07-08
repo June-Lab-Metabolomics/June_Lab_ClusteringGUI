@@ -20,6 +20,32 @@ def standardize(data):
 
     return dataCur
 
+#standardizing data after it has been normalized to a specific biological profile
+def normStandardize(data):
+    ##********** This function has not been tested yet****************
+    #The mean for a normalized data set should always be 1 for all of the metabolites.
+    mean = 1
+
+    #initialize the needed arrays
+    dataCur = np.zeros(data.shape[0])
+    #stdCur = np.zeros(data.shape[0])
+
+    #standardize each row of data
+    for i in range(data.shape[0]):
+        residuals = 0
+        #calculate the residuals
+        for j in range(data.shape[0]):
+            #sum up the residuals
+            residuals += (data[i]-mean)**2
+        #calculate the standard deviation
+        std_data = (residuals/(data.shape[0]-1))**0.5
+
+        #Input the data into an array of standardized values
+        dataCur[i] = (data[i]-mean)/std_data
+
+    return dataCur
+
+
 #creating function that creates the dendrogram
 def create_dendrogram(data, **kwargs):
     #Create the linkage matrix
