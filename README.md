@@ -15,7 +15,7 @@
 
 ## After downloading the requisite libaries needed. Open a shell and run the following program:
 
-initGUI.py
+`initGUI.py`
 
 ## Additionally, this program can be run from the command line by running the following command from the directory containing initGUI.py
 
