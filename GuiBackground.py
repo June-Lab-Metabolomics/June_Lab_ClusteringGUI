@@ -7,7 +7,7 @@ import pandas as pd
 
 
         
-    #Standardizing the data that is input to python.
+#Standardizing the data that is input to python.
 def standardize(data):
     #I would like to add the ability to check for the number of rows or columns that are given in a numpy array.
     #find the mean and standard deviation of the given row(eventually will need to move this to allow for the entire table to input.)
@@ -46,15 +46,14 @@ def normStandardize(data):
 
 
 #creating function that creates the dendrogram
-def create_dendrogram(data, **kwargs):
-    #************* Change the width of the heatmap*****************
-
+def create_dendrogram(data, link='ward',dist='euclidean'):
     #Create the figure that will plot the results
     fig = plt.figure(figsize=(8,8))
     metabDendAxes = [0.15, 0.85, 0.8, 0.1]
     metabAxes = fig.add_axes(metabDendAxes)
     #Create the linkage matrix
-    linkageMetabOut = linkage(data,'ward')
+    linkageMetabOut = linkage(data,link,dist)
+    print(linkageMetabOut)
     #create the dendrogram
     metaboliteDend = dendrogram(linkageMetabOut, orientation='top',  no_labels=True)
     metaboliteDendLeaves = metaboliteDend['leaves']
@@ -66,12 +65,11 @@ def create_dendrogram(data, **kwargs):
     fig.add_axes(groupAxes)
 
     #Create a linkage matrix for the data
-    linkageGroupOut = linkage(groupCluster,'ward')
+    linkageGroupOut = linkage(groupCluster,link,dist)
     #create the dendrogram of the output
     groupDend = dendrogram(linkageGroupOut,orientation='left',no_labels=True)
     #get the leaves of the dendrogram to allow for the appropriate regrouping of the data
     groupDendLeaves = groupDend['leaves']
-
 
     #Rework the data to create the clustergram
     dataFinal = np.zeros((data.shape[0],data.shape[1]))
@@ -79,7 +77,7 @@ def create_dendrogram(data, **kwargs):
         #rearranging the data for heatmap
         for j in range(data.shape[0]):
             #going through the metabolites
-            dataFinal[j,i] = data[metaboliteDendLeaves[j],groupDend[i]]
+            dataFinal[j,i] = data[metaboliteDendLeaves[j],groupDendLeaves[i]]
 
 
     #create the axes in which the heatmap will be mapped upon

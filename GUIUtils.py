@@ -69,7 +69,8 @@ class GUIUtils:
         #save the excel sheet
         output.save()
 
-    def createClustergram():
+    def createClustergram(linkFunc,distMet):
+        print(distMet)
         #ask the user to select the file that they would like to create a clustergram for.
         file = filedialog.askopenfilename()
         #Open the excel file that the user to looking to use for their clustering analysis
@@ -95,7 +96,7 @@ class GUIUtils:
             data[i,:] = GB.standardize(data[i,:])
 
         #create dendrogram and plot data
-        GB.create_dendrogram(data)
+        GB.create_dendrogram(data,link=linkFunc)
         GB.plotting()
 
     def groupMedians(file):
@@ -190,13 +191,13 @@ class GUIUtils:
             linkageTwo = linkage(data,'single')
 
             #Create the appropriate plt figure to allow for the comparison of linkage functions
-            fig, axes = plt.subplots(1,2,figsize=(10,8))
+            fig, axes = plt.subplots(1,2,figsize=(8,8))
 
             #create the dendrograms
-            dend1 = dendrogram(linkageOne,ax=axes[0],above_threshold_color='y',orientation='left')
-            dend2 = dendrogram(linkageTwo,ax=axes[1],above_threshold_color='y',orientation='left')
+            dend1 = dendrogram(linkageOne,ax=axes[0],above_threshold_color='y',orientation='left',no_labels=True)
+            dend2 = dendrogram(linkageTwo,ax=axes[1],above_threshold_color='y',orientation='left',no_labels=True)
 
-            #create the plot
+            #show the plot
             plt.show()
 
         elif num_comps == 3:
@@ -206,12 +207,12 @@ class GUIUtils:
             linkageThree = linkage(data,'complete')
 
             #Create the appropriate plt figure to allow for the comparison of linkage functions
-            fig, axes = plt.subplots(1,3,figsize=(10,8))
+            fig, axes = plt.subplots(1,3,figsize=(8,8))
 
             #create the dendrograms
-            dend1 = dendrogram(linkageOne,ax=axes[0],above_threshold_color='y',orientation='left')
-            dend2 = dendrogram(linkageTwo,ax=axes[1],above_threshold_color='y',orientation='left')
-            dend3 = dendrogram(linkageThree,ax=axes[2],above_threshold_color='y',orientation='left')
+            dend1 = dendrogram(linkageOne,ax=axes[0],above_threshold_color='y',orientation='left',no_labels=True)
+            dend2 = dendrogram(linkageTwo,ax=axes[1],above_threshold_color='y',orientation='left',no_labels=True)
+            dend3 = dendrogram(linkageThree,ax=axes[2],above_threshold_color='y',orientation='left',no_labels=True)
 
             #create the plot
             plt.show()
@@ -224,14 +225,88 @@ class GUIUtils:
             linkageFour = linkage(data, 'average')
 
             #Create the appropriate figure to allow for the comparison of linkage functions
-            fig, axes = plt.subplots(2,2,figsize=(10,8))
+            fig, axes = plt.subplots(2,2,figsize=(8,8))
+            plt.title('Linkage Comparison')
 
             #create the dendrograms
-            dend1 = dendrogram(linkageOne,ax=axes[0],above_threshold_color='y',orientation='left')
-            dend2 = dendrogram(linkageTwo,ax=axes[1],above_threshold_color='y',orientation='left')
-            dend3 = dendrogram(linkageThree,ax=axes[2],above_threshold_color='y',orientation='left')
-            dend4 = dendrogram(linkageFour,ax=axes[3],above_threshold_color='y',orientation='left')
+            dend1 = dendrogram(linkageOne,ax=axes[0,0],above_threshold_color='y',orientation='left',no_labels=True)
+            dend2 = dendrogram(linkageTwo,ax=axes[0,1],above_threshold_color='y',orientation='left',no_labels=True)
+            dend3 = dendrogram(linkageThree,ax=axes[1,0],above_threshold_color='y',orientation='left',no_labels=True)
+            dend4 = dendrogram(linkageFour,ax=axes[1,1],above_threshold_color='y',orientation='left',no_labels=True)
 
-            #Create the plot
             plt.show()
+
+
+    def ensembleClustering():
+        #The distance measures and linkage functions should be consistent but we could also develop
+        #a GUI that allows for the users to select various distance measures. The linkage functions 
+        #should be consistent for all ensemble clustering techniques
+        filename = filedialog.askopenfilename()
+        #*******LinkageFunctions******************
+        #*******Single
+        #*******Complete
+        #*******Average
+        #*******Ward
+
+        #*******Current Distance Measures*****************
+        #*******Euclidean
+        #*******Squared Euclidean
+        #*******Cosine
+        #*******Chebyshev
+        #*******Other Available Distance Measures*
+        #*******Minkowski
+        #*******Cityblock
+        #*******Standardized Euclidean
+        #*******Correlation
+        #*******Hamming
+        #*******Jaccard
+        #*******Canberra
+        #*******Braycurtis
+        #*******Mahaloanobis
+        #*******Yule
+        #*******Matching
+        #*******Dice
+        #*******Kulsinsi
+        #*******RogerStanimoto
+        #*******RussellRao
+        #*******SokalMichener
+        #*******SokalSneath
+        #*******Wminkowski
+
+        #Read in the data for ensemble clustering
+        metab_data = pd.read_excel(filename, sheet_name='Medians')
+
+        #List for the use in creating and plotting the clustering results
+        linkageList = ['single','complete','average']
+        distList = ['euclidean','sqeuclidean','cosine','chebyshev']
+
+        #finding the number of groups in the metabolomics study to allow for proper clustering of the results
+        num_groups = metab_data.shape[1] - 2
+
+        #creating a numpy array that is the size of the data that is being read in.
+        data = np.zeros((metab_data.shape[0],metab_data.shape[1]-2))
+
+        for i in range(num_groups):
+            #create the appropriate string to add to the group name
+            num = str(i + 1)
+            g_name = "M" + num
+            #grab the Medians for each group
+            medianCur = metab_data[g_name]
+            #add the medians data to the array to be clustered
+            data[:,i] = medianCur
+            
+        #Standardize the data before clustering the results
+        for i in range(metab_data.shape[0]):
+            data[i,:] = GB.standardize(data[i,:])
+
+
+        #Create a plot with 16 subplots
+        fig, axes = plt.subplots(3,4,figsize=(10,8))
+        for i in range(len(linkageList)):
+            for j in range(len(distList)):
+                linkCur = linkage(data,linkageList[i],distList[j])
+                print('Good')
+                dendCur = dendrogram(linkCur,ax=axes[i,j],above_threshold_color='y',orientation='top',no_labels=True)
+
+        plt.show()
 
