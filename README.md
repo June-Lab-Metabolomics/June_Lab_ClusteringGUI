@@ -19,4 +19,4 @@
 
 ## Additionally, this program can be run from the command line by running the following command from the directory containing initGUI.py
 
-/path/to/directory> python3 initGUI.py
+`/path/to/directory> python3 initGUI.py`
