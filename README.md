@@ -4,13 +4,13 @@
 
 
 ## Make sure to Download the following libraries before getting started with this GUI.
-- [numpy](https://www.scipy.org/)  
-- scipy
-- pandas
-- tkinter
-- statistics
-- sklearn
-- matplotlib
+- [numpy](https://numpy.org/)  
+- [scipy](https://www.scipy.org/)
+- [pandas](https://pandas.pydata.org/)
+- [tkinter](https://docs.python.org/3/library/tkinter.html)
+- [statistics](https://docs.python.org/3/library/statistics.html)
+- [sklearn](https://scikit-learn.org/stable/index.html)
+- [matplotlib](https://matplotlib.org/3.2.1/index.html)
 
 
 ## After downloading the requisite libaries needed. Open a shell and run the following program:
