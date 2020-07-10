@@ -4,7 +4,7 @@
 
 
 ## Make sure to Download the following libraries before getting started with this GUI.
-- numpy(https://www.scipy.org/)  
+- [numpy](https://www.scipy.org/)  
 - scipy
 - pandas
 - tkinter
