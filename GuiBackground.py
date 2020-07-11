@@ -4,6 +4,7 @@ from scipy.cluster.hierarchy import dendrogram
 from scipy.cluster.hierarchy import linkage
 from matplotlib import pyplot as plt
 import pandas as pd
+from tkinter import filedialog
 
 
         
@@ -46,28 +47,27 @@ def normStandardize(data):
 
 
 #creating function that creates the dendrogram
-def create_dendrogram(data, link='ward',dist='euclidean'):
+def create_dendrogram(data, norm=1,link='ward',dist='euclidean'):
     #Create the figure that will plot the results
     fig = plt.figure(figsize=(8,8))
-    metabDendAxes = [0.15, 0.85, 0.8, 0.1]
+    metabDendAxes =[0.05,0.05,0.1,0.8]
     metabAxes = fig.add_axes(metabDendAxes)
     #Create the linkage matrix
     linkageMetabOut = linkage(data,link,dist)
-    print(linkageMetabOut)
     #create the dendrogram
-    metaboliteDend = dendrogram(linkageMetabOut, orientation='top',  no_labels=True)
+    metaboliteDend = dendrogram(linkageMetabOut, orientation='left',  no_labels=True)
     metaboliteDendLeaves = metaboliteDend['leaves']
 
     #tranpose the data and then run an analysis on the groups.
     groupCluster = np.transpose(data)
     #create axes for the group clusters
-    groupAxes = [0.05,0.05,0.1,0.8]
+    groupAxes = [0.15, 0.85, 0.8, 0.1]
     fig.add_axes(groupAxes)
 
     #Create a linkage matrix for the data
     linkageGroupOut = linkage(groupCluster,link,dist)
     #create the dendrogram of the output
-    groupDend = dendrogram(linkageGroupOut,orientation='left',no_labels=True)
+    groupDend = dendrogram(linkageGroupOut,orientation='top',no_labels=True)
     #get the leaves of the dendrogram to allow for the appropriate regrouping of the data
     groupDendLeaves = groupDend['leaves']
 
@@ -83,13 +83,46 @@ def create_dendrogram(data, link='ward',dist='euclidean'):
     #create the axes in which the heatmap will be mapped upon
     heatmapAxes = [0.15, 0.05, 0.8, 0.8]
     heatmapAxes = fig.add_axes(heatmapAxes)
-    heatmapAxes.matshow(groupCluster,aspect ='auto',origin='left')
+    if norm == 0:
+        heatmapAxes.matshow(dataFinal,aspect ='auto',origin='left')
+
+    elif norm == 1:
+        normFile = filedialog.askopenfilename()
+        dataFinal = pd.read_excel(normFile,sheet_name='Medians')
+
+        #finding the number of groups in the metabolomics study to allow for proper clustering of the results
+        num_groups = dataFinal.shape[1] - 2
+
+        #creating a numpy array that is the size of the data that is being read in.
+        data = np.zeros((dataFinal.shape[0],dataFinal.shape[1]-2))
+
+        for i in range(num_groups):
+            #create the appropriate string to add to the group name
+            num = str(i + 1)
+            g_name = "M" + num
+            #grab the Medians for each group
+            medianCur = dataFinal[g_name]
+            #add the medians data to the array to be clustered
+            data[:,i] = medianCur
+
+
+        for i in range(dataFinal.shape[0]):
+            data[i,:] = normStandardize(data[i,:])
+            dataFinal = np.zeros((data.shape[0],data.shape[1]))
+        for i in range(data.shape[1]):
+            #rearranging the data for heatmap
+            for j in range(data.shape[0]):
+                #going through the metabolites
+                dataFinal[j,i] = data[metaboliteDendLeaves[j],groupDendLeaves[i]]
+
+        #output the normalized heatmap    
+        heatmapAxes.matshow(dataFinal,aspect='auto',origin='left')
     
 
 #initialize the plot
 def plotting():
     #create a figure window
-    plt.title('Medians Clustering')
+    #plt.title('Medians Clustering')
     plt.xlabel('Clustered Metabolites')
     plt.show()
 

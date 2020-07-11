@@ -2,7 +2,8 @@
 # which contains the functions that create all of the needed GUI information
 from tkinter import filedialog
 from GUIUtils import GUIUtils as GU 
-import clustergramGUI as CG 
+import clustergramGUI as CG
+import linkageGUI as LG
 
 def cluster(*args):
     #ask the user to select a file before the program sends the file to another function to create the clustergram
@@ -16,8 +17,9 @@ def Medians(*args):
     
 def Linkages():
     #ask the user to select a clustergram file to compare linkage functions.
-    filename = filedialog.askopenfilename()
-    GU.linkageComparison(filename,4)
+    #filename = filedialog.askopenfilename()
+    LG.linkageGUI()
+    #GU.linkageComparison(filename,4)
 
 def Valid():
     #ask the user to select a clustergram file to run through a validition study.

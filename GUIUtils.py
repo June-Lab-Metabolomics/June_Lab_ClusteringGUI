@@ -69,8 +69,7 @@ class GUIUtils:
         #save the excel sheet
         output.save()
 
-    def createClustergram(linkFunc,distMet):
-        print(distMet)
+    def createClustergram(norm,linkFunc,distMet):
         #ask the user to select the file that they would like to create a clustergram for.
         file = filedialog.askopenfilename()
         #Open the excel file that the user to looking to use for their clustering analysis
@@ -96,7 +95,7 @@ class GUIUtils:
             data[i,:] = GB.standardize(data[i,:])
 
         #create dendrogram and plot data
-        GB.create_dendrogram(data,link=linkFunc)
+        GB.create_dendrogram(data,norm,link=linkFunc,dist=distMet)
         GB.plotting()
 
     def groupMedians(file):
