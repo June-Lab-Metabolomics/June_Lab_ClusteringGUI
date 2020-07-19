@@ -60,8 +60,14 @@ class GUIUtils:
         #Replace the values in the dataframe with the appropriate values
         volcano['Unnamed: 0'] = correctedArray
 
+
+        #Replace the file name with the appropriate rename
+        file = file[0:len(file)-5]
+        file = file + '_corrected.xlsx'
+        print(file)
+
         #specify the file to write to
-        output = pd.ExcelWriter('/Users/bradyhislop/Desktop/testing1.xlsx')
+        output = pd.ExcelWriter(file)
 
         #write to excel file
         volcano.to_excel(output,index=False)
@@ -155,7 +161,7 @@ class GUIUtils:
 
 
 
-    def linkageComparison(file,num_comps):
+    def linkageComparison(file,num_comps,linkList):
         #This function creates multiple comparisons of linkages 
         # to determine the best linkage function
 
@@ -186,8 +192,8 @@ class GUIUtils:
 
         if num_comps == 2:
             #Create the linkage matrix
-            linkageOne = linkage(data,'ward')
-            linkageTwo = linkage(data,'single')
+            linkageOne = linkage(data,linkList[0])
+            linkageTwo = linkage(data,linkList[1])
 
             #Create the appropriate plt figure to allow for the comparison of linkage functions
             fig, axes = plt.subplots(1,2,figsize=(8,8))
@@ -201,9 +207,9 @@ class GUIUtils:
 
         elif num_comps == 3:
             #Create the linkage matrix
-            linkageOne = linkage(data,'ward')
-            linkageTwo = linkage(data,'single')
-            linkageThree = linkage(data,'complete')
+            linkageOne = linkage(data,linkList[0])
+            linkageTwo = linkage(data,linkList[1])
+            linkageThree = linkage(data,linkList[2])
 
             #Create the appropriate plt figure to allow for the comparison of linkage functions
             fig, axes = plt.subplots(1,3,figsize=(8,8))
@@ -218,10 +224,10 @@ class GUIUtils:
 
         elif num_comps == 4:
             #Create the linkage matrix
-            linkageOne = linkage(data,'ward')
-            linkageTwo = linkage(data,'single')
-            linkageThree = linkage(data,'complete')
-            linkageFour = linkage(data, 'average')
+            linkageOne = linkage(data,linkList[0])
+            linkageTwo = linkage(data,linkList[1])
+            linkageThree = linkage(data,linkList[2])
+            linkageFour = linkage(data, linkList[3])
 
             #Create the appropriate figure to allow for the comparison of linkage functions
             fig, axes = plt.subplots(2,2,figsize=(8,8))
