@@ -4,18 +4,31 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
 from scipy.cluster.hierarchy import linkage
-from sklearn.cluster import AgglomerativeClustering
-import sklearn.preprocessing as pp
+from scipy.spatial import distance_matrix
+from scipy.spatial.distance import pdist,squareform
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree
+import logging
+import time
+import fpdf
+import os
 import statistics as stat
 import GuiBackground as GB
 from tkinter import filedialog
 
 
 class GUIUtils:
-
+    
     def dataIntegrity(file):
         #Read in Volcano Plot data
-        volcano = pd.read_excel(file)
+        try:
+            volcano = pd.read_excel(file)
+        except:
+            error_time = time.asctime()
+            error_time = ': Failed to read in the excel file. Please put error in the Github issues tab.'
+            logging.info(error_time)
+            return
+            
         #grab the first row the volcano data
         check = volcano['Unnamed: 0']
 
@@ -51,8 +64,11 @@ class GUIUtils:
                         if j == len(curVal)-1:
                             try:
                                 correctedArray[i] = float(corrected)
-                            except CorrectionError:
-                                print('Error in correcting the data integrity issue')
+                            except:
+                                error_time = time.asctime()
+                                error_time += ': Unable to convert values to floats. Make sure all data values are only contain decimals or numberic values'
+                                logging.info(error_time)
+                                return
             else:
                 #save the data that did not need to be corrected to the correctedArray
                 correctedArray[i] = curVal
@@ -63,8 +79,7 @@ class GUIUtils:
 
         #Replace the file name with the appropriate rename
         file = file[0:len(file)-5]
-        file = file + '_corrected.xlsx'
-        print(file)
+        file += '_corrected.xlsx'
 
         #specify the file to write to
         output = pd.ExcelWriter(file)
@@ -78,8 +93,21 @@ class GUIUtils:
     def createClustergram(norm,linkFunc,distMet):
         #ask the user to select the file that they would like to create a clustergram for.
         file = filedialog.askopenfilename()
+        
+        if file == '':
+            error_time = time.asctime()
+            error_time += ': Failed to select a file'
+            logging.info(error_time)
+            return
+
         #Open the excel file that the user to looking to use for their clustering analysis
-        metab_data = pd.read_excel(file, sheet_name='Medians')
+        try:
+            metab_data = pd.read_excel(file, sheet_name='Medians')
+        except:
+            error_time = time.asctime()
+            error_time += ': Failed to read in the excel sheet check the sheet name is Medians'
+            logging.info()
+            return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
         num_groups = metab_data.shape[1] - 2
@@ -92,7 +120,14 @@ class GUIUtils:
             num = str(i + 1)
             g_name = "M" + num
             #grab the Medians for each group
-            medianCur = metab_data[g_name]
+            try:
+                medianCur = metab_data[g_name]
+            except:
+                error_time = time.asctime()
+                error_time += ': Improper column header, make sure to follow the convention of M1-MN'
+                logging.info(error_time)
+                return
+
             #add the medians data to the array to be clustered
             data[:,i] = medianCur
             
@@ -105,10 +140,17 @@ class GUIUtils:
         GB.plotting()
 
     def groupMedians(file):
-        #read in the file containing all of the metabolite values
-        #file = '/Users/bradyhislop/Box/ClusteringGUI/Examples/Metaboanalyst-Data-Input.xlsx'
-        medians = pd.read_excel(file)
+        ## Need to add the ability similar to that in the dataIntegrity function that allows the user to simply input file and then they have an output file with the name 
+        #medians attached to the end.
 
+        #read in the file containing all of the metabolite values
+        try:
+            medians = pd.read_excel(file)
+        except:
+            error_time = time.asctime()
+            error_time += ': Failed to read in the excel file. Please put error in the Github issues tab.'
+            logging.info(error_time)    
+            return
         #get the group letters to know which groups to find the medians of
         groups = medians['mz']
 
@@ -137,7 +179,7 @@ class GUIUtils:
             end = int((factor*(i+1)))
             for j in range(mediansOut.shape[0]):
                 #find the median for the first groups of values
-                curMean = stat.mean(medians[medians.columns[j+2]][start:end])
+                curMean = stat.median(medians[medians.columns[j+2]][start:end])
                 #put medians into the appropriate table
                 mediansOut[j,i+1] = curMean
 
@@ -156,8 +198,11 @@ class GUIUtils:
         #create dataframe that prepares the data to be input to a csv file
         mediansCSV = pd.DataFrame(data=medianDict)
 
+        file = file[0:len(file)-5]
+        file += '_Medians.csv'
+
         #specify the file that I want the program to write to.
-        mediansCSV.to_csv('/Users/bradyhislop/Desktop/Medians.csv',columns=medianList,index =False)
+        mediansCSV.to_csv(file,columns=medianList,index =False)
 
 
 
@@ -169,7 +214,13 @@ class GUIUtils:
         # or give them all four of the linkage functions.
 
         #Open the excel file that the user to looking to use for their clustering analysis
-        metab_data = pd.read_excel(file, sheet_name='Medians')
+        try:
+            metab_data = pd.read_excel(file, sheet_name='Medians')
+        except:
+            error_time = time.asctime()
+            error_time += ': Failed to read in the excel file check to make sure that the sheet name is Medians.'
+            logging.info(error_time)
+            return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
         num_groups = metab_data.shape[1] - 2
@@ -182,7 +233,13 @@ class GUIUtils:
             num = str(i + 1)
             g_name = "M" + num
             #grab the Medians for each group
-            medianCur = metab_data[g_name]
+            try:
+                medianCur = metab_data[g_name]
+            except:
+                error_time = time.asctime()
+                error_time += ': Improper column headers, make sure you are following the convention M1-MN'
+                logging.info(error_time)
+                return
             #add the medians data to the array to be clustered
             data[:,i] = medianCur
             
@@ -247,6 +304,13 @@ class GUIUtils:
         #a GUI that allows for the users to select various distance measures. The linkage functions 
         #should be consistent for all ensemble clustering techniques
         filename = filedialog.askopenfilename()
+
+        if filename == '':
+            error_time = time.asctime()
+            error_time += ': Failed to select a file.'
+            logging.info(error_time)
+            return
+
         #*******LinkageFunctions******************
         #*******Single
         #*******Complete
@@ -279,7 +343,13 @@ class GUIUtils:
         #*******Wminkowski
 
         #Read in the data for ensemble clustering
-        metab_data = pd.read_excel(filename, sheet_name='Medians')
+        try:
+            metab_data = pd.read_excel(filename, sheet_name='Medians')
+        except:
+            error_time = time.asctime()
+            error_time += ': Failed to open excel file, make sure that the sheet name is Medians'
+            logging.info(error_time)
+            return
 
         #List for the use in creating and plotting the clustering results
         linkageList = ['single','complete','average']
@@ -296,7 +366,14 @@ class GUIUtils:
             num = str(i + 1)
             g_name = "M" + num
             #grab the Medians for each group
-            medianCur = metab_data[g_name]
+            try:
+                medianCur = metab_data[g_name]
+            except:
+                error_time = time.asctime()
+                error_time += ': Improper column headers, make sure to follow the convention of M1-MN'
+                logging.info(error_time)
+                return 
+
             #add the medians data to the array to be clustered
             data[:,i] = medianCur
             
@@ -310,8 +387,102 @@ class GUIUtils:
         for i in range(len(linkageList)):
             for j in range(len(distList)):
                 linkCur = linkage(data,linkageList[i],distList[j])
-                print('Good')
+                
                 dendCur = dendrogram(linkCur,ax=axes[i,j],above_threshold_color='y',orientation='top',no_labels=True)
 
         plt.show()
+
+
+    #Function to create a minimum spanning tree
+    def MST():
+        #ask user to specify the file they would like to analyze with a minimum spanning tree
+        file = filedialog.askopenfilename()
+
+        if file == '':
+            error_time = time.asctime()
+            error_time += ': Failed to select a file'
+            logging.info(error_time)
+            return
+
+        #read in the file that is needed to calculate the minimum spanning tree
+        try:
+            dataRaw = pd.read_excel(file,sheet_name='Medians')
+        except:
+            error_time = time.asctime()
+            error_time += ': Failed to open excel file, make sure sheet name is Medians'
+            logging.info(error_time)
+            return
+        
+        #find the number of groups in that data
+        num_groups = dataRaw.shape[1]-2
+        #standardize the data before finding the distance matrix
+        data = np.zeros((dataRaw.shape[0],dataRaw.shape[1]-2))
+
+        for i in range(num_groups):
+            #create the appropriate string to add to the group name
+            num = str(i+1)
+            g_name = "M" + num
+            #grab the medians  for each group
+            try:
+                medianCur = dataRaw[g_name]
+            except:
+                error_time = time.asctime()
+                error_time += ': Improper column headers, make sure to follow the convention M1-MN'
+                logging.info(error_time)
+                return 
+
+            #add the medians data to the array to be clustered
+            data[:,i] = medianCur
+
+        #standardize the data before clustering
+        for i in range(dataRaw.shape[0]):
+            data[i,:] = GB.standardize(data[i,:])
+
+        #find the distance matrix using the pairwise distance function used in the analysis of Agglomerative clustering. 
+        pairWise = pdist(data)
+        
+        pairWise = squareform(pairWise)
+
+        # #put the distance matrix into the appropriate format for creation of MST using scipy's MST capabilities
+        mstInput = csr_matrix(pairWise)
+
+        # #create the minimum spanning tree
+        mstOut = minimum_spanning_tree(mstInput)
+
+
+    def PDFGenerator():
+        #create the pdf and title for each page.
+        pdf = fpdf.FPDF('P','mm','Letter')
+
+        #Create the title and set the default font
+        os.chdir("C:/Users/bradyhislop/Desktop")
+
+
+        #Create the first page
+        pdf.add_page()
+        pdf.set_font('Arial','B',20)
+        pdf.cell(197,10,'Clustering Results',0,0,'C')
+        pdf.ln(10)
+        pdf.cell(197,10,'Clustergram (Single, Euclidean)',0,0,'C')
+        pdf.ln(10)
+        file = filedialog.askopenfilename()
+        pdf.image(file,55,30,100,100)
+        pdf.ln(120)
+        pdf.cell(197,10,'Clustergram (Ward, Euclidean)',0,0,'C')
+        file = filedialog.askopenfilename()
+        pdf.image(file,55,160,100,100)
+        
+
+        #create second page. 
+        pdf.add_page()
+        file = filedialog.askopenfilename()
+        pdf.cell(197,10,'Linkage Comparison',0,0,'C')
+        pdf.ln(10)
+        pdf.cell(197,10,'(Single, Ward, Complete, Average)',0,0,'C')
+        pdf.image(file,55,30,100,100)
+
+
+        pdf.output('Example.pdf','F')
+
+
 

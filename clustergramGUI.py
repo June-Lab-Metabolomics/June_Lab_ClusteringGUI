@@ -26,9 +26,7 @@ def clustergramGUI():
 			elif i == 1:
 				distLoc = (2*int(selectionIndex[2]) + int(selectionIndex[3]))
 				dist = distList[distLoc]
-				print(link)
-				print(dist)
-				GU.createClustergram(1,link,dist)
+				GU.createClustergram(0,link,dist)
 
 	#Create the frame that will contain the parameters to create a clutergram
 	mainframe = ttk.Frame(root, padding="15 15 15 15")

@@ -1,7 +1,13 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-import btn_functions as bf 
+import btn_functions as bf
+import logging
+import time 
+
+log_time = time.time()
+log_file = 'Output_' + str(log_time) + '.log' 
+logging.basicConfig(filename=log_file,level=logging.INFO)
 
 root = Tk()
 height = root.winfo_screenheight() - 200
@@ -24,7 +30,7 @@ mainframe.columnconfigure(2, weight =2)
 mainframe.rowconfigure(1, weight = 2)
 mainframe.rowconfigure(2, weight = 2)
 mainframe.rowconfigure(3, weight = 2)
-mainframe.columnconfigure(3, weight=2)
+mainframe.columnconfigure(3, weight=2) 
 
 #Create label that tells the user the interface that they are currently witin.
 juneLab = ttk.Label(mainframe, text="Welcome to the June Lab Clustering GUI",font=("TkHeadingFont",36)).grid(column=0,row=0,columnspan=4)
@@ -51,10 +57,10 @@ integrity = ttk.Button(mainframe, text="Data Integrity", command=bf.integrity).g
 ensemble = ttk.Button(mainframe,text="Ensemble Clustering", command=bf.ensemble).grid(column=3,row=2,sticky=(N,S,E,W))
 
 #Create a button to allow the user to create a minimum spanning tree on data
-mst = ttk.Button(mainframe,text='Minimum Spanning Tree(Non-Functional)',command=bf.mst).grid(column=3,row=3,sticky=(N,S,E,W))
+mst = ttk.Button(mainframe,text='Minimum Spanning Tree',command=bf.mst).grid(column=3,row=3,sticky=(N,S,E,W))
 
 #Create a button for the generation of a report
-generate = ttk.Button(mainframe,text='Generate PDF Report(Non-Functional)',command=bf.generate).grid(column=3,row=1,sticky=(N,S,E,W))
+generate = ttk.Button(mainframe,text='Generate PDF Report',command=bf.generate).grid(column=3,row=1,sticky=(N,S,E,W))
 
 
 # pad each widget with 5 pixels on each side to ensure that the buttons do not stay together. 
