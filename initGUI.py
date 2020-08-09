@@ -7,7 +7,7 @@ import time
 
 log_time = time.time()
 log_file = 'Output_' + str(log_time) + '.log' 
-logging.basicConfig(filename=log_file,level=logging.INFO)
+logging.basicConfig(filename=log_file,format='%(asctime)s %(message)s',datefmt='%m/%d/%Y %I:%M:%S %p')
 
 root = Tk()
 height = root.winfo_screenheight() - 200

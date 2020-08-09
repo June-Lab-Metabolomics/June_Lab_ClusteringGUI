@@ -9,7 +9,6 @@ from scipy.spatial.distance import pdist,squareform
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 import logging
-import time
 import fpdf
 import os
 import statistics as stat
@@ -24,9 +23,7 @@ class GUIUtils:
         try:
             volcano = pd.read_excel(file)
         except:
-            error_time = time.asctime()
-            error_time = ': Failed to read in the excel file. Please put error in the Github issues tab.'
-            logging.info(error_time)
+            logging.warning(': Failed to read in the excel file. Please put error in the Github issues tab.')
             return
             
         #grab the first row the volcano data
@@ -65,9 +62,7 @@ class GUIUtils:
                             try:
                                 correctedArray[i] = float(corrected)
                             except:
-                                error_time = time.asctime()
-                                error_time += ': Unable to convert values to floats. Make sure all data values are only contain decimals or numberic values'
-                                logging.info(error_time)
+                                logging.warning(': Unable to convert values to floats. Make sure all data values are only contain decimals or numberic values')
                                 return
             else:
                 #save the data that did not need to be corrected to the correctedArray
@@ -94,19 +89,15 @@ class GUIUtils:
         #ask the user to select the file that they would like to create a clustergram for.
         file = filedialog.askopenfilename()
         
-        if file == '':
-            error_time = time.asctime()
-            error_time += ': Failed to select a file'
-            logging.info(error_time)
+        if file == '': 
+            logging.warning(': Failed to select a file')
             return
 
         #Open the excel file that the user to looking to use for their clustering analysis
         try:
             metab_data = pd.read_excel(file, sheet_name='Medians')
         except:
-            error_time = time.asctime()
-            error_time += ': Failed to read in the excel sheet check the sheet name is Medians'
-            logging.info()
+            logging.warning(': Failed to read in the excel sheet check the sheet name is Medians')
             return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
@@ -123,9 +114,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                error_time = time.asctime()
-                error_time += ': Improper column header, make sure to follow the convention of M1-MN'
-                logging.info(error_time)
+                logging.warning(': Improper column header, make sure to follow the convention of M1-MN')
                 return
 
             #add the medians data to the array to be clustered
@@ -147,9 +136,7 @@ class GUIUtils:
         try:
             medians = pd.read_excel(file)
         except:
-            error_time = time.asctime()
-            error_time += ': Failed to read in the excel file. Please put error in the Github issues tab.'
-            logging.info(error_time)    
+            logging.warning(': Failed to read in the excel file. Please put error in the Github issues tab.')    
             return
         #get the group letters to know which groups to find the medians of
         groups = medians['mz']
@@ -217,9 +204,7 @@ class GUIUtils:
         try:
             metab_data = pd.read_excel(file, sheet_name='Medians')
         except:
-            error_time = time.asctime()
-            error_time += ': Failed to read in the excel file check to make sure that the sheet name is Medians.'
-            logging.info(error_time)
+            logging.warning(': Failed to read in the excel file check to make sure that the sheet name is Medians.')
             return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
@@ -236,9 +221,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                error_time = time.asctime()
-                error_time += ': Improper column headers, make sure you are following the convention M1-MN'
-                logging.info(error_time)
+                logging.warning(': Improper column headers, make sure you are following the convention M1-MN')
                 return
             #add the medians data to the array to be clustered
             data[:,i] = medianCur
@@ -306,9 +289,7 @@ class GUIUtils:
         filename = filedialog.askopenfilename()
 
         if filename == '':
-            error_time = time.asctime()
-            error_time += ': Failed to select a file.'
-            logging.info(error_time)
+            logging.warning(': Failed to select a file.')
             return
 
         #*******LinkageFunctions******************
@@ -346,9 +327,7 @@ class GUIUtils:
         try:
             metab_data = pd.read_excel(filename, sheet_name='Medians')
         except:
-            error_time = time.asctime()
-            error_time += ': Failed to open excel file, make sure that the sheet name is Medians'
-            logging.info(error_time)
+            logging.warning(': Failed to open excel file, make sure that the sheet name is Medians')
             return
 
         #List for the use in creating and plotting the clustering results
@@ -369,9 +348,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                error_time = time.asctime()
-                error_time += ': Improper column headers, make sure to follow the convention of M1-MN'
-                logging.info(error_time)
+                logging.warning(': Improper column headers, make sure to follow the convention of M1-MN')
                 return 
 
             #add the medians data to the array to be clustered
@@ -399,18 +376,14 @@ class GUIUtils:
         file = filedialog.askopenfilename()
 
         if file == '':
-            error_time = time.asctime()
-            error_time += ': Failed to select a file'
-            logging.info(error_time)
+            logging.warning(': Failed to select a file')
             return
 
         #read in the file that is needed to calculate the minimum spanning tree
         try:
             dataRaw = pd.read_excel(file,sheet_name='Medians')
         except:
-            error_time = time.asctime()
-            error_time += ': Failed to open excel file, make sure sheet name is Medians'
-            logging.info(error_time)
+            logging.warning(': Failed to open excel file, make sure sheet name is Medians')
             return
         
         #find the number of groups in that data
@@ -426,9 +399,7 @@ class GUIUtils:
             try:
                 medianCur = dataRaw[g_name]
             except:
-                error_time = time.asctime()
-                error_time += ': Improper column headers, make sure to follow the convention M1-MN'
-                logging.info(error_time)
+                logging.warning(': Improper column headers, make sure to follow the convention M1-MN')
                 return 
 
             #add the medians data to the array to be clustered

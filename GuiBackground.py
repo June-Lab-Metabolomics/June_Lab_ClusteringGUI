@@ -2,12 +2,10 @@ import numpy as np
 import statistics as stat
 from scipy.cluster.hierarchy import dendrogram
 from scipy.cluster.hierarchy import linkage
-
 from matplotlib import pyplot as plt
 import pandas as pd
 from tkinter import filedialog
 import logging
-import time
 
 
         
@@ -91,18 +89,14 @@ def create_dendrogram(data, norm=1,link='ward',dist='euclidean'):
 
     elif norm == 1:
         normFile = filedialog.askopenfilename()
-        if normFile =='':
-            error_time = time.asctime()
-            error_time += ': Failed to select a normalized file'
-            logging.info(error_time)
+        if normFile =='': 
+            logging.warning(': Failed to select a normalized file')
             return
 
         try:    
             dataFinal = pd.read_excel(normFile,sheet_name='Medians')
-        except:
-            error_time = time.asctime()
-            error_time += ': Failed to read in excel file, make sure you have a sheet name Medians'
-            logging.info(error_time)
+        except: 
+            logging.warning(': Failed to read in excel file, make sure you have a sheet name Medians')
             return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
@@ -118,10 +112,8 @@ def create_dendrogram(data, norm=1,link='ward',dist='euclidean'):
             #grab the Medians for each group
             try:
                 medianCur = dataFinal[g_name]
-            except:
-                error_time = time.asctime()
-                error_time += ': Improper column headers, make sure that you are following conventions for column headers M1-MN'
-                logging.info(error_time)
+            except: 
+                logging.warning(': Improper column headers, make sure that you are following conventions for column headers M1-MN')
                 return
 
             #add the medians data to the array to be clustered
