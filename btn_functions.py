@@ -18,10 +18,11 @@ def Linkages():
     #send the user to the linkage GUI function
     LG.linkageGUI()
 
-def Valid():
+def Compound():
     #ask the user to select a clustergram file to run through a validition study.
     #Waiting on confirmation...
-    filename = filedialog.askopenfilename()
+
+    GU.compoundMatchUp()
 
 def P2P():
     #Waiting until the MST functionality is complete. 

@@ -45,7 +45,7 @@ med = ttk.Button(mainframe, text="Group Medians", command=bf.Medians).grid(colum
 link = ttk.Button(mainframe, text="Compare Linkage functions", command=bf.Linkages).grid(column=1, row=2,sticky =(N,S,E,W))
 
 #Create a button to allow the user to validate the appropriate number of clusters needed for a given set of metabolites.
-val = ttk.Button(mainframe, text="Validity index (Non-Functional)", command=bf.Valid).grid(column=1, row=3, sticky =(N,S,E,W))
+val = ttk.Button(mainframe, text="Compound Match-Up", command=bf.Compound).grid(column=1, row=3, sticky =(N,S,E,W))
 
 #Create a button to allow the user to create the peaks to pathways files needed to analyze the peaks to pathways in Mummichog
 peak = ttk.Button(mainframe, text="Peaks to Pathways(Non-Functional)", command=bf.P2P).grid(column=2, row=2, sticky =(N,S,E,W))
