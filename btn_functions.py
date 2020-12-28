@@ -10,9 +10,8 @@ def cluster(*args):
     CG.clustergramGUI()
 
 def Medians(*args):
-    #ask the user to select a file that will be used to create a medians file.
-    filename = filedialog.askopenfilename()
-    GU.groupMedians(filename)
+    #send the user to the groupMedians function
+    GU.groupMedians()
 
 def Linkages():
     #send the user to the linkage GUI function
@@ -21,7 +20,6 @@ def Linkages():
 def Compound():
     #ask the user to select a clustergram file to run through a validition study.
     #Waiting on confirmation...
-
     GU.compoundMatchUp()
 
 def P2P():
@@ -32,7 +30,6 @@ def integrity():
     #ask the user to select a volcano plot file to check the integrity of the data against. 
     filename = filedialog.askopenfilename()
     GU.dataIntegrity(filename)
-
 
 def ensemble():
     #send the user to the ensemble clustering function

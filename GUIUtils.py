@@ -9,7 +9,7 @@ from scipy.spatial.distance import pdist,squareform
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 import logging
-#import fpdf
+import fpdf
 import os
 import statistics as stat
 import GuiBackground as GB
@@ -20,13 +20,13 @@ class GUIUtils:
     
     def dataIntegrity(file):
         #log that the user called the data integrity function
-        logging.warning(': User called the Data Integrity function.')
+        logging.info(': User called the Data Integrity function.')
 
         #Read in Volcano Plot data
         try:
             volcano = pd.read_excel(file)
         except:
-            logging.warning(': Failed to read in the excel file. Please put error in the Github issues tab.')
+            logging.error(': Failed to read in the excel file. Please put error in the Github issues tab.')
             return
             
         #grab the first row the volcano data
@@ -62,7 +62,7 @@ class GUIUtils:
                             try:
                                 correctedArray[i] = float(corrected)
                             except:
-                                logging.warning(': Unable to convert values to floats. Make sure all data values are only contain decimals or numberic values')
+                                logging.error(': Unable to convert values to floats. Make sure all data values are only contain decimals or numberic values')
                                 return
             else:
                 #save the data that did not need to be corrected to the correctedArray
@@ -86,29 +86,19 @@ class GUIUtils:
         output.save()
 
         #log that the data integrity function has been sucessfully completed. 
-        logging.warning(': Data Integrity check sucessfully completed.')
+        logging.info(': Data Integrity check sucessfully completed.')
 
     def createClustergram(norm,linkFunc,distMet):
         #log that the user called the Create Clustergram function
         logging.warning(': User called the Create Clustergram Function.')
-        #ask the user to select the file that they would like to create a clustergram for.
-        file = filedialog.askopenfilename()
-        
-        if file == '': 
-            logging.warning(': Failed to select a file')
+        #check that the file the user selects is appropriate
+        metab_data = GB.fileCheck()
+        if metab_data is None:
+            #log error message and return for soft exit.
+            logging.error(': Error loading in the Excel sheet.')
             return
-
-        #Open the excel file that the user to looking to use for their clustering analysis
-        try:
-            metab_data = pd.read_excel(file, sheet_name='Medians')
-            del(file)
-        except:
-            logging.warning(': Failed to read in the excel sheet check the sheet name is Medians')
-            return
-
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
         num_groups = metab_data.shape[1] - 2
-
         #creating a numpy array that is the size of the data that is being read in.
         data = np.zeros((metab_data.shape[0],metab_data.shape[1]-2))
 
@@ -120,7 +110,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                logging.warning(': Improper column header, make sure to follow the convention of M1-MN')
+                logging.error(': Improper column header, make sure to follow the convention of M1-MN')
                 return
 
             #add the medians data to the array to be clustered
@@ -131,42 +121,41 @@ class GUIUtils:
             data[i,:] = GB.standardize(data[i,:])
         del(metab_data)
         #create dendrogram and plot data
-        GB.create_dendrogram(data,norm,link=linkFunc,dist=distMet)
+        GB.create_dendrogram(data,norm,link=linkFunc,dist=distMet,func='clustergram')
         GB.plotting()
         del(data,norm,linkFunc,distMet)
         #log that you have sucessfully created the clustergram
-        logging.warning(': Sucessfully created the wanted Clustergram')
+        logging.info(': Sucessfully created the wanted Clustergram')
 
-    def groupMedians(file):
+    def groupMedians():
+        '''
+        Determine the number of groups and then create a list or array of the appropriate
+        beginning and ending of each group. This assumes that the groups are all of equal size which should be
+        the goal for any and all analysis. Groups with out the same sizes should be considered
+        inappropriate for analysis in this context, additionally it should be noted that statistics
+        with out the same groups sizes can lead to incorrect analysis.
+        '''
         #log that the user called the group medians function
-        logging.warning(': User called the Group Medians function.')
-
-        #read in the file containing all of the metabolite values
-        try:
-            medians = pd.read_excel(file)
-        except:
-            logging.warning(': Failed to read in the excel file. Please put error in the Github issues tab.')    
+        logging.info(': User called the Group Medians function.')
+        file = filedialog.askopenfilename()
+        medians = GB.fileCheck(file =file)
+        if medians is None:
+            #log error message and return the function for soft exit.
+            logging.error(': Error reading in the excel sheet')
             return
+
         #get the group letters to know which groups to find the medians of
         groups = medians['mz']
+        numObs = int(medians.shape[0]-1)
 
-        #determine the number of groups and then create a list or array of the appropriate
-        #beginning and ending of each group.
-        #This assumes that the groups are all of equal size which should be
-        #the goal for any and all analysis. Groups with out the same sizes should be considered
-        #inappropriate for analysis in this context, additionally it should be noted that statistics
-        #with out the same groups sizes can lead to incorrect analysis. 
-        num_groups = int(medians['Unnamed: 0'][23][0])
+        num_groups = int(medians['Unnamed: 0'][numObs][0])
         factor = len(medians['Unnamed: 0'])/num_groups
-
 
         #create a numpy array containing 7 columns to allow for input of the m/z values and the groups
         mediansOut = np.zeros((medians.shape[1]-2,num_groups+1))
             
-
         #populate the first column of the array with the m/z values
         mediansOut[:,0] = medians.columns[2:medians.shape[1]]
-
 
         #Get the medians for each group and metabolite
         for i in range(num_groups):
@@ -201,19 +190,16 @@ class GUIUtils:
         mediansCSV.to_csv(file,columns=medianList,index =False)
         del(file,medianList,medianDict,mediansCSV)
         #logging the completion of the group medians function
-        logging.warning(': Sucessfully grouped the Medians of each group!')
-
-
+        logging.info(': Sucessfully grouped the Medians of each group!')
 
     def linkageComparison(file,num_comps,linkList):
         #Log that user called linkage comparison function
-        logging.warning(': User called the Linkage Comparison function.')
-
-        #Open the excel file that the user to looking to use for their clustering analysis
-        try:
-            metab_data = pd.read_excel(file, sheet_name='Medians')
-        except:
-            logging.warning(': Failed to read in the excel file check to make sure that the sheet name is Medians.')
+        logging.info(': User called the Linkage Comparison function.')
+        #check that the file is appropriate for our data set
+        metab_data = GB.fileCheck(file)    
+        if metab_data is None:
+            #Logs error and returns function to ensure soft exit.
+            logging.error(': Error loading in excel file check log file!')
             return
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
@@ -230,7 +216,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                logging.warning(': Improper column headers, make sure you are following the convention M1-MN')
+                logging.error(': Improper column headers, make sure you are following the convention M1-MN')
                 return
             #add the medians data to the array to be clustered
             data[:,i] = medianCur
@@ -242,6 +228,8 @@ class GUIUtils:
         if num_comps == 2:
             #Create the linkage matrix
             linkageOne = linkage(data,linkList[0])
+            distMeasure = pdist(data)
+            distMeasure = squareform(distMeasure)
             linkageTwo = linkage(data,linkList[1])
 
             #Create the appropriate plt figure to allow for the comparison of linkage functions
@@ -255,8 +243,6 @@ class GUIUtils:
             plt.savefig('Test2.png')
             #show the plot
             plt.show()
-
-            
 
         elif num_comps == 3:
             #Create the linkage matrix
@@ -301,9 +287,10 @@ class GUIUtils:
             plt.show()
 
         #log the completion of the linkage comparison
-        logging.warning(': Sucessfuly completed the comparison of the linkage functions!')
+        logging.info(': Sucessfuly completed the comparison of the linkage functions!')
             
     def compoundMatchUp():
+        logging.info(': Compound Match-Up function called!')
         # Reads in our Kegg Compound Dataset (Single Column)
         kegg_data = pd.read_excel("kegg_compound_IDs_3.xlsx")
 
@@ -329,58 +316,22 @@ class GUIUtils:
 
     def ensembleClustering():
         #log that the user called ensemble clustering function
-        logging.warning(': User called Ensemble Clustering function.')
+        logging.info(': User called Ensemble Clustering function.')
+
+        #optimum number of clusters from validation index.
+        optNum = 3
 
         #The distance measures and linkage functions should be consistent but we could also develop
         #a GUI that allows for the users to select various distance measures. The linkage functions 
         #should be consistent for all ensemble clustering techniques
-        filename = filedialog.askopenfilename()
+        metab_data = GB.fileCheck()
 
-        if filename == '':
-            logging.warning(': Failed to select a file.')
-            return
-
-        #*******LinkageFunctions******************
-        #*******Single
-        #*******Complete
-        #*******Average
-        #*******Ward
-
-        #*******Current Distance Measures*****************
-        #*******Euclidean
-        #*******Squared Euclidean
-        #*******Cosine
-        #*******Chebyshev
-        #*******Other Available Distance Measures*
-        #*******Minkowski
-        #*******Cityblock
-        #*******Standardized Euclidean
-        #*******Correlation
-        #*******Hamming
-        #*******Jaccard
-        #*******Canberra
-        #*******Braycurtis
-        #*******Mahaloanobis
-        #*******Yule
-        #*******Matching
-        #*******Dice
-        #*******Kulsinsi
-        #*******RogerStanimoto
-        #*******RussellRao
-        #*******SokalMichener
-        #*******SokalSneath
-        #*******Wminkowski
-
-        #Read in the data for ensemble clustering
-        try:
-            metab_data = pd.read_excel(filename, sheet_name='Medians')
-        except:
-            logging.warning(': Failed to open excel file, make sure that the sheet name is Medians')
-            return
-        del(filename)
         #List for the use in creating and plotting the clustering results
         linkageList = ['single','complete','average']
         distList = ['euclidean','sqeuclidean','cosine','chebyshev']
+
+        #calculate the number of clusterings based upon the size of the lists
+        numClusterings = len(linkageList)*len(distList)
 
         #finding the number of groups in the metabolomics study to allow for proper clustering of the results
         num_groups = metab_data.shape[1] - 2
@@ -396,7 +347,7 @@ class GUIUtils:
             try:
                 medianCur = metab_data[g_name]
             except:
-                logging.warning(': Improper column headers, make sure to follow the convention of M1-MN')
+                logging.error(': Improper column headers, make sure to follow the convention of M1-MN')
                 return 
 
             #add the medians data to the array to be clustered
@@ -406,38 +357,37 @@ class GUIUtils:
         for i in range(data.shape[0]):
             data[i,:] = GB.standardize(data[i,:])
 
+        #determine the the number of clusters and the dictionary location that needs to be called. 
+        numMetabs = data.shape[0]
+        dictLoc = numMetabs-optNum-1
 
-        #Create a plot with wanted ensemble clusters
-        fig, axes = plt.subplots(3,4,figsize=(10,8))
+        #create co-occurrence matrix.
+        coOcc = GB.cooccurrence(data)
+
+
         for i in range(len(linkageList)):
             for j in range(len(distList)):
                 linkCur = linkage(data,linkageList[i],distList[j])
-                
-                dendCur = dendrogram(linkCur,ax=axes[i,j],above_threshold_color='y',orientation='top',no_labels=True)
+                valid = GB.clustConnectLink(linkCur)
+                coOcc = GB.popCooccurrence(valid[dictLoc],coOcc,numClusterings)
+                print('passed')
         del(linkageList,distList)
-        plt.savefig('EnsembleTest.png')
-        plt.show()
-
+        link = 'ward'
+        dist = 'euclidean'
+        GB.create_dendrogram(coOcc,norm=0,link=link,dist=dist,func='ensemble')
+        GB.plotting()
         #Log the completion of the ensemble clustering function
-        logging.warning(': Sucessfully completed Ensemble clustering!')
+        logging.info(': Sucessfully completed Ensemble clustering!')
 
-    
     #Function to create a minimum spanning tree
     def MST():
         #log that user called MST
-        logging.warning(': User called Minimum Spanning Tree function.')
-        #ask user to specify the file they would like to analyze with a minimum spanning tree
-        file = filedialog.askopenfilename()
-
-        if file == '':
-            logging.warning(': Failed to select a file')
-            return
-
-        #read in the file that is needed to calculate the minimum spanning tree
-        try:
-            dataRaw = pd.read_excel(file,sheet_name='Medians')
-        except:
-            logging.warning(': Failed to open excel file, make sure sheet name is Medians')
+        logging.info(': User called Minimum Spanning Tree function.')
+        #check the stability of the file
+        dataRaw = GB.fileCheck()
+        if dataRaw is None:
+            #log error and return function to ensure a soft closing of the class
+            logging.error(': Error loading the Excel sheet.')
             return
         
         #find the number of groups in that data
@@ -453,7 +403,7 @@ class GUIUtils:
             try:
                 medianCur = dataRaw[g_name]
             except:
-                logging.warning(': Improper column headers, make sure to follow the convention M1-MN')
+                logging.error(': Improper column headers, make sure to follow the convention M1-MN')
                 return 
 
             #add the medians data to the array to be clustered
@@ -493,202 +443,154 @@ class GUIUtils:
         mstOutNp = mstOut.to_numpy()
 
         mstOutMat = pd.DataFrame(mstOutMat)
-
-        #Create an empty dictionary that will contain the clusters
-        clusters = {}
-
-        #create an empty dictionary that allows us to save the clusters for validation.
-        validationClusters = {}
-
-
-        # create initial list of metabolites that serves as the initial list of metabolites that will be clustered.
-        metabolites = np.ones((data.shape[0],1))
-
-        for i in range(dataMST.shape[0]):
-            #pull out the connections for the current iteration
-            curCon1 = mstOutNp[i,0]
-            curCon2 = mstOutNp[i,1]
-
-            curCon1 = int(curCon1)
-            curCon2 = int(curCon2)
-
-            if i == 0:
-                #convert the metabolites to string for easier comparison
-                firstConnect = [curCon1, curCon2]
-
-                #set the metabolites equal to zero in the initial metabolite list
-                metabolites[curCon1,0] = 0 
-                metabolites[curCon2,0] = 0
-
-                #create dictionary of clusters 
-                for j in range(dataMST.shape[0]-(i+1)):
-                    clusters.update({j:j})
-                
-
-                #find the metabolites that are ones and were not clustered
-                unClustered = np.where(metabolites == 1)
-
-                #input the connection
-                clusters[0] = firstConnect
-                
-
-                for j in range(1,dataMST.shape[0]):
-                    #input the cluster values into the dictionary
-                    clusters[j] = unClustered[0][j-1]
-            else:
-                #save the previous dictionary 
-                clusterPrevious = clusters
-                del(clusters)
-                clusters = {}
-
-                #create a new dictionary 
-                for j in range(dataMST.shape[0]-(i+1)):
-                    clusters.update({j:j})
-
-                #grab the latest connections
-                curCon1 = mstOutNp[i,0]
-                curCon2 = mstOutNp[i,1]
-
-                curCon1 = int(curCon1)
-                curCon2 = int(curCon2)
-
-                curCon1Connect = 0;
-                curCon2Connect = 0;
-                unchanged = []
-
-                previousKey = list(clusterPrevious.keys())
-                previousKey = len(previousKey)
-
-                for k in range(previousKey):
-                    #Determine if any of the new clustered meatbolites 
-                    curCheck = clusterPrevious[k]
-
-
-                    if isinstance(curCheck, list):
-                        #check list for the first connection
-                        curCon1Check = curCon1 in curCheck
-
-                        #check list for the second connection
-                        curCon2Check = curCon2 in curCheck
-
-                        if curCon1Check == True and curCon2Check == False:
-                            curCon1Connect = 1
-                            curCon1Location = k
-                        elif curCon1Check == False and curCon2Check == True:
-                            curCon2Connect = 1
-                            curCon2Location = k
-                        elif curCon1Check == False and curCon2Check == False:
-                            unchanged.append(k)
-                        elif curCon1Check == True and curCon2Check == True:
-                            logging.warning(': Issue clustering the data a duplication has been discovered.')
-
-
-                    elif isinstance(curCheck, np.integer) or isinstance(curCheck, int):
-                        #check list for the first connection
-                        curCon1Check = curCon1 == curCheck
-
-                        #check list for the second connection
-                        curCon2Check = curCon2 == curCheck
-
-                        if curCon1Check == True and curCon2Check == False:
-                            curCon1Connect = 1
-                            curCon1Location = k
-                        elif curCon1Check == False and curCon2Check == True:
-                            curCon2Connect = 1
-                            curCon2Location = k
-                        elif curCon1Check == False and curCon2Check == False:
-                            unchanged.append(k)
-                        elif curCon1Check == True and curCon2Check == True:
-                            loggging.warning(': Issue clustering the data a duplication has been discovered.')
-
-
-                    else:
-                        logCheck = type(curCheck)
-                        logging.warning(logCheck)
-                        logging.warning(': Inappropriate data type for the for clustering ID algorithm.')
-                        return
-
-                    if curCon1Connect == 1 and curCon2Connect == 1 and k == previousKey-1:
-                        for m in range(1,len(unchanged)+1):
-                            #cluster the appropriate remaining clusters together
-                            clusters[m] = clusterPrevious[unchanged[m-1]]
-
-                        newConnect1 = clusterPrevious[curCon1Location]
-                        newConnect2 = clusterPrevious[curCon2Location]
-                        
-                        if isinstance(newConnect1,list) and isinstance(newConnect2, list):
-                            newConnect = newConnect1 + newConnect2
-                            clusters[0] = newConnect
-                        elif isinstance(newConnect1,list) and isinstance(newConnect2, np.integer):
-                            newConnect = newConnect1
-                            intList = newConnect[:] + [newConnect2]
-                            clusters[0] = intList
-                        elif isinstance(newConnect1,np.integer) and isinstance(newConnect2, list):
-                            newConnect = newConnect2
-                            intList = newConnect[:] + [newConnect1]
-                            clusters[0] = intList
-                        elif isinstance(newConnect1,np.integer) and isinstance(newConnect2,np.integer):
-                            newConnect = [newConnect1, newConnect2]
-                            clusters[0] =newConnect
-
-            validationClusters.update({i:clusters})
+ 
+        #determine how the minimum spanning tree was created for validation of clusters
+        validationClusters = GB.clustConnect(dataMST,mstOutNp)
 
         #Validate the number of clusters that should be used in the clustering solutions.
         valIndex = GB.Validate(validationClusters,data,num_groups)
+        x = valIndex[1,:]
+        y = valIndex[0,:]
+        #outputs the validity index
+        nonZeros = x.nonzero()
+        nonZerosLen = len(nonZeros[0])
+
+        xUpdate = np.zeros(nonZerosLen)
+        yUpdate = np.zeros(nonZerosLen)
+        for i in range(nonZerosLen):
+            xUpdate[i] = x[nonZeros[0][i]]
+            yUpdate[i] = y[nonZeros[0][i]]
+
         valIndex = pd.DataFrame(valIndex)
+
+        valMin = min(yUpdate)
+        valMin = np.where(yUpdate==valMin)
+        print(valMin)
 
         #save to a csv file
         mstOut.to_csv('MST.csv',index=False)
 
         #save validation measure to csv file
         valIndex.to_csv('valIndex.csv',index=False)
-
         #logging the completion of the Minimum spanning tree
-        logging.warning(': Sucessfully completed MST!')
-
+        logging.info(': Sucessfully completed MST and clustering validation!')
+        plt.plot(xUpdate,yUpdate)
+        plt.xlabel('Clusters')
+        plt.ylabel('Validation Index')
+        plt.title('Cluster Validation')
+        plt.show()
 
     def PDFGenerator():
         #log that the function has been called
-        logging.warning(': User called PDF Generator function.')
-        print('Commented Out!')
+        logging.info(': User called PDF Generator function.')
 
-        # #create the pdf and title for each page.
-        # pdf = fpdf.FPDF('P','mm','Letter')
+        #create the pdf and title for each page.
+        pdf = fpdf.FPDF('P','mm','Letter')
 
-        # #Create the title and set the default font
-        # os.chdir("C:/Users/bradyhislop/Desktop")
+        #Create the title and set the default font
+        directory = filedialog.askdirectory()
+        os.chdir(directory)
 
-
-        # #Create the first page
-        # pdf.add_page()
-        # pdf.set_font('Arial','B',20)
-        # pdf.cell(197,10,'Clustering Results',0,0,'C')
-        # pdf.ln(10)
-        # pdf.cell(197,10,'Clustergram (Single, Euclidean)',0,0,'C')
-        # pdf.ln(10)
-        # file = filedialog.askopenfilename()
-        # pdf.image(file,55,30,100,100)
-        # pdf.ln(120)
-        # pdf.cell(197,10,'Clustergram (Ward, Euclidean)',0,0,'C')
-        # file = filedialog.askopenfilename()
-        # pdf.image(file,55,160,100,100)
+        #Create the first page
+        pdf.add_page()
+        pdf.set_font('Arial','B',24)
+        pdf.cell(197,10,'Metabolanalyst Results',0,0,'C')
+        pdf.set_font('Arial','B',14)
+        pdf.set_font('')
+        pdf.ln(10)
+        pdf.cell(197,10,'Normalization',0,0,'L')
+        pdf.ln(10)
+        file = 'norm_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(120)
+        pdf.cell(197,10,'Sample Normalization',0,0,'L')
+        file = 'snorm_dpi300.png'
+        pdf.image(file,55,160,100,100)
         
+        #create second page. 
+        pdf.add_page()
+        file = 'pca_pair_dpi300.png'
+        pdf.cell(197,10,'PCA pairs',0,0,'L')
+        pdf.ln(10)
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'PCA Scree plots',0,0,'L')
+        file = 'pca_scree_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
-        # #create second page. 
-        # pdf.add_page()
-        # file = filedialog.askopenfilename()
-        # pdf.cell(197,10,'Linkage Comparison',0,0,'C')
-        # pdf.ln(10)
-        # pdf.cell(197,10,'(Single, Ward, Complete, Average)',0,0,'C')
-        # pdf.image(file,55,30,100,100)
+        #create third page.
+        pdf.add_page()
+        file = 'pca_loading_dpi300.png'
+        pdf.cell(197,10,'PCA Loading',0,0,'L')
+        pdf.ln(10)
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'PCA biplot',0,0,'L')
+        file = 'pca_biplot_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
+        #create fourth page
+        pdf.add_page()
+        pdf.cell(197,10,'PLS-DA Pairs',0,0,'L')
+        pdf.ln(10)
+        file = 'pls_pair_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'PLS-DA 1 v.2',0,0,'L')
+        file ='pls_score2d_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
-        # pdf.output('Example.pdf','F')
+        #create fifth page
+        pdf.add_page()
+        pdf.cell(197,10,'PLS-DA 3D plot',0,0,'L')
+        pdf.ln(10)
+        file = 'pls_score3d_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'PLS-DA Loading',0,0,'L')
+        file ='pls_loading_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
+        #create sixth page
+        pdf.add_page()
+        pdf.cell(197,10,'PLS-DA CV',0,0,'L')
+        pdf.ln(10)
+        file = 'pls_cv_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'PLS-DA Imp',0,0,'L')
+        file ='pls_imp_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
+        #create seventh page
+        pdf.add_page()
+        pdf.cell(197,10,'Dendrogram',0,0,'L')
+        pdf.ln(10)
+        file = 'tree_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'Fold Change',0,0,'L')
+        file = 'fc_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
+        #create eigth page
+        pdf.add_page()
+        pdf.cell(197,10,'T-test',0,0,'L')
+        file = 'tt_dpi300.png'
+        pdf.image(file,55,30,100,100)
+        pdf.ln(10)
+        pdf.ln(120)
+        pdf.cell(197,10,'Volcano Plot',0,0,'L')
+        file = 'volcano_dpi300.png'
+        pdf.image(file,55,160,100,100)
 
-        # #log the sucessful creation of the pdf
-        # logging.warning(': Sucessfully created a pdf of the results!')
-
-
+        #create the pdf of the results
+        pdf.output('Example.pdf','F')
+        #log the sucessful creation of the pdf
+        logging.info(': Sucessfully created a pdf of the results!')
