@@ -15,7 +15,6 @@ from tkinter import filedialog
 from scipy.signal import argrelextrema
 
 class GUIUtils:
-
     def dataIntegrity(file):
         '''
         The data integrity function checks and corrects Volcano plot outputs from MetaboAnalyst for extra decimals. 
@@ -144,7 +143,7 @@ class GUIUtils:
         GB.create_dendrogram(data,norm, link=linkFunc, dist=distMet, func='clustergram')
 
         del(data,norm,linkFunc,distMet)
-        #log that you have sucessfully created the clustergram
+
         logging.info(': Sucessfully created the wanted Clustergram')
         return
 
@@ -451,17 +450,23 @@ class GUIUtils:
 
         for i in range(len(linkageList)):
             for j in range(len(distList)):
+                start = time.perf_counter()
                 linkCur = linkage(data,linkageList[i],distList[j])
                 valid = GB.clustConnectLink(linkCur)
                 coOcc = GB.popCooccurrence(valid[dictLoc],coOcc,numClusterings)
+                end = time.perf_counter()
                 logging.info(str(linkageList[i])+'-'+str(distList[j]) +' done!')
+                print(end-start)
         del(linkageList,distList)
 
         #add a ward euclidean clustering to the ensemble. 
+        start = time.perf_counter()
         linkCur = linkage(data,'ward','euclidean')
         valid = GB.clustConnectLink(linkCur)
         coOcc = GB.popCooccurrence(valid[dictLoc],coOcc,numClusterings)
+        end = time.perf_counter()
         logging.info('Ward-Euclidean done!')
+        print(end-start)
 
         #create the ensemble dendrogram using ward-euclidean inputs. 
         GB.createEnsemDendrogram(coOcc,metab_data,norm=0,link='ward',dist='euclidean',func="ensemble")
@@ -479,10 +484,8 @@ class GUIUtils:
         logging.info(': Sucessfully completed Ensemble clustering!')
         return
 
-    def MST():
+    def MST(func = "base"):
         #*******Need for dataMST and mstoutNP??
-
-
 
         '''
         MST generates a minimum spanning tree of input data, and then validates the optimum number of clusters based upon a validation index of 
@@ -552,12 +555,15 @@ class GUIUtils:
         y=valIndex[0,:]
         #find the local minimums
         minimums = argrelextrema(y,np.less)
+
         #determine the minimums y values to for plotting
         miniVals = np.zeros((len(minimums[0]),2))
         for i in range(len(minimums[0])):
             #input the number of clusters and the validation index value.
             miniVals[i,0] = x[minimums[0][i]]
             miniVals[i,1] = y[minimums[0][i]]
+        ind = np.unravel_index(np.argmin(miniVals, axis=None), miniVals.shape)
+        minValIndex = miniVals[ind[0],:]
 
         valOut = np.zeros((2,valIndex.shape[1]))
         for j in range(valIndex.shape[1]):
@@ -576,14 +582,19 @@ class GUIUtils:
 
         #save validation measure to csv file
         valIndex.to_csv('valIndex.csv',index=False)
-        #logging the completion of the Minimum spanning tree
-        logging.info(': Sucessfully completed MST and clustering validation!')
-        plt.plot(valOut[1,:],valOut[0,:])
-        plt.plot(miniVals[:,0],miniVals[:,1],'r*')
-        plt.xlabel('Clusters')
-        plt.ylabel('Validation Index')
-        plt.title('Cluster Validation')
-        plt.show()
+        if func == "base":
+            #logging the completion of the Minimum spanning tree
+            logging.info(': Sucessfully completed MST and clustering validation!')
+            plt.plot(valOut[1,:],valOut[0,:])
+            plt.plot(minValIndex[0],minValIndex[1],'r*')
+            font = {'family': 'serif','color':  'black','weight': 'bold','size': 20}
+            plt.text(valIndex.shape[1]/2, 0.75, str(int(minValIndex[0]))+' - Clusters!!',fontdict=font)
+            plt.xlabel('Clusters')
+            plt.ylabel('Validation Index')
+            plt.title('Cluster Validation')
+            plt.show()
+
+        return minValIndex[0]
 
     def peaksToPathways():
         '''
@@ -624,9 +635,11 @@ class GUIUtils:
                 #append to ensemFiles
                 ensemFiles.append(direct + '/' + curCheck)
 
+        columnsHead = list(dataRaw.columns)
+        columnFirst = columnsHead[0]
         for i in range(len(ensemFiles)):
             dataClust = np.ones((dataRaw.shape[0],3))
-            dataClust[:,0] = dataRaw["Unnamed: 0"]
+            dataClust[:,0] = dataRaw[columnFirst]
             dataClust[:,1] = dataRaw["rtmed"]
             #start the process of reading in and creating the ensemble output files. 
             try:

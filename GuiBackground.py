@@ -246,9 +246,10 @@ def create_dendrogram(data, norm=1,link='ward',dist='euclidean',func='clustergra
 
     if norm == 0:
         #create the axes in which the heatmap will be mapped upon
-        heatmapAxes = [0.15, 0.05, 0.8, 0.8]
+        heatmapAxes = [0.05, 0.05, 0.9, 0.9]
         heatmapAxes = fig.add_axes(heatmapAxes)
         heatmapAxes.matshow(dataFinal,aspect ='auto',origin='upper')
+        heatmapAxes.plot([0, 0, 0], [-1, -.5, 3], 'r--', linewidth=3, markersize=3)
         if func == 'ensemble':
             #send the coOccurence matrix for evaluation of the appropriate number of clusters.
             recClusters(dataFinal,heatmapAxes,groupDendLeaves,metab_data)
@@ -612,7 +613,6 @@ def clustConnect(dataMST,mstOutNp):
             #input the connection
             clusters[0] = firstConnect
             
-
             for j in range(1,dataMST.shape[0]):
                 #input the cluster values into the dictionary
                 clusters[j] = unClustered[0][j-1]
@@ -849,6 +849,11 @@ def Validate(data,dists,num_groups):
     initTime = time.time()
 
     for i in range(startPoint,clusterings):
+        #**********************************************************************************************************
+        #**********************************Threading should occur here*********************************************
+        #**********************************************************************************************************
+        #**********************************************************************************************************
+        startTime = time.perf_counter()
         #grab the current set of metabolite clusters
         curClusters = data[i]
 
@@ -945,8 +950,14 @@ def Validate(data,dists,num_groups):
             message1 = round(percent,2) 
             message1 = str(message1) + '% completed'
             logging.info(message1)
-            message = str(i)+': ' +str(runTime)
-            logging.info(message)   
+            message = str(i)+': ' + str(runTime)
+            logging.info(message) 
+
+
+        endTime = time.perf_counter()
+        totalTime = endTime -startTime
+
+        print(totalTime, curClustersLength) 
 
     runTime = time.time()-initTime
     runTime = timeConverter(runTime)
@@ -968,9 +979,10 @@ def who(curUser):
     Name of current user. 
     '''
     #define dictionary of the NetID's for identification of the user for the naming of PDF
-    file = open('Users.txt','r')
+    file = open('C:/Users/Public/Documents/June_Lab_ClusteringGUI-master/Users.txt','r')
     contents = file.read()
     users = ast.literal_eval(contents)
+    
     try:
         curUser = users[curUser]
     except:
@@ -1146,50 +1158,51 @@ def ensembleClustersOut(found,groupDendLeaves,metab_data):
     except:
         logging.warning(': Deleting variable prior to its creation is not advised!!')
 
-    idents = []
-    for i in range(lenFound):
-        #find where in the row of metabData I need to extract from by determining which metabolite was clustered where from the groupDendLeaves
-        curMetab = np.where(groupDendLeaves==found[i])
-        
-        foundMetabs[i,:] = rawData[curMetab[0][0],:]
+    if lenFound > 40:
+        idents = []
+        for i in range(lenFound):
+            #find where in the row of metabData I need to extract from by determining which metabolite was clustered where from the groupDendLeaves
+            curMetab = np.where(groupDendLeaves==found[i])
+            
+            foundMetabs[i,:] = rawData[curMetab[0][0],:]
 
-        #save a list that contains identities for the study
-        idents.append(textList[curMetab[0][0]])
+            #save a list that contains identities for the study
+            idents.append(textList[curMetab[0][0]])
 
-    #create column headers for the data frame
-    columns = []
-    for i in range(columnHeaders-1):
-        columns.append("M"+str(i+1))
-    columns.append("rt_med")
+        #create column headers for the data frame
+        columns = []
+        for i in range(columnHeaders-1):
+            columns.append("M"+str(i+1))
+        columns.append("rt_med")
 
-    foundMetabs = pd.DataFrame(foundMetabs,columns=columns)
+        foundMetabs = pd.DataFrame(foundMetabs,columns=columns)
 
-    #add identities to the first column of the data that will be output
-    foundMetabs.insert(0, "Identities", idents, True)
+        #add identities to the first column of the data that will be output
+        foundMetabs.insert(0, "Identities", idents, True)
 
-    chkBuffer = glob.glob("*.csv")
-    count = 1
-    if 'EnsembleCluster01.csv' in chkBuffer:
-        checkVal = False
-        while checkVal == False:
-            count += 1
-            #search the "buffer" for ensemble cluster
-            if count < 10:
-                #determine if the file has already been made
-                curFileCheck = ensemPre + '0' + str(count) + ensemSuf
-                if curFileCheck not in chkBuffer:
-                    checkVal = True
-                    ensemFile = curFileCheck
-            else:
-                curFileCheck = ensemPre + str(count) + ensemSuf
-                if curFileCheck not in chkBuffer:
-                    checkVal = True
-                    ensemFile = curFileCheck
-        foundMetabs.to_csv(ensemFile, index=False)
-    else:
-        ensemFile = ensemPre + '0'+ str(count) + ensemSuf 
-        foundMetabs.to_csv(ensemFile, index=False)
-    logging.info(':Success!')
+        chkBuffer = glob.glob("*.csv")
+        count = 1
+        if 'EnsembleCluster01.csv' in chkBuffer:
+            checkVal = False
+            while checkVal == False:
+                count += 1
+                #search the "buffer" for ensemble cluster
+                if count < 10:
+                    #determine if the file has already been made
+                    curFileCheck = ensemPre + '0' + str(count) + ensemSuf
+                    if curFileCheck not in chkBuffer:
+                        checkVal = True
+                        ensemFile = curFileCheck
+                else:
+                    curFileCheck = ensemPre + str(count) + ensemSuf
+                    if curFileCheck not in chkBuffer:
+                        checkVal = True
+                        ensemFile = curFileCheck
+            foundMetabs.to_csv(ensemFile, index=False)
+        else:
+            ensemFile = ensemPre + '0'+ str(count) + ensemSuf 
+            foundMetabs.to_csv(ensemFile, index=False)
+        logging.info(':Success!')
 
 def readInColumns(metab_data):
     '''

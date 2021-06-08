@@ -10,6 +10,7 @@ import time
 import getpass
 import os
 import reinit as RI
+import fpdf
 
 
 class JuneLabClusteringGUI(ttk.Frame):
@@ -22,14 +23,15 @@ class JuneLabClusteringGUI(ttk.Frame):
 		self.rowconfigure(1, weight = 2)
 		self.rowconfigure(2, weight = 2)
 		self.rowconfigure(3, weight = 2)
+		self.rowconfigure(4, weight = 2)
 		self.columnconfigure(3, weight=2) 
 		self.pack()
 		self.create_widgets()
 
 	def create_widgets(self):
 		self.style = ttk.Style()
-		self.style.configure("RW.TLabel", foreground="#e7a53a",font=("TkHeadingFont",36))
-		self.style.configure("RW.TButton", padding=15, borderwidth=15, foreground="black", background="#e7a53a",font=("TkHeadingFont",20))
+		self.style.configure("RW.TLabel", foreground="#f03d33",font=("TkHeadingFont",36))
+		self.style.configure("RW.TButton", padding=15, borderwidth=15, foreground="black", background="#000000",font=("TkHeadingFont",20))
 		self.JuneLab = ttk.Label(self, text="Welcome to the June Lab Clustering GUI",style="RW.TLabel").grid(column=0,row=0,columnspan=4)
 		self.clust = ttk.Button(self,text="Create Clustergram",style="RW.TButton",command=self.createClustergram).grid(column=1,row=1, sticky=(N,S,E,W))
 		#Create a button to allow the user to create a medians file for better clustering results. 
@@ -48,6 +50,8 @@ class JuneLabClusteringGUI(ttk.Frame):
 		self.mst = ttk.Button(self,text='Minimum Spanning Tree', style="RW.TButton", command=self.mst).grid(column=3,row=1,sticky=(N,S,E,W))
 		#Create a button for the generation of a report
 		self.generate = ttk.Button(self,text='Generate PDF Report', style="RW.TButton", command=self.generate).grid(column=3,row=3,sticky=(N,S,E,W))
+		#Create a button for the users to submit requests. 
+		self.request = ttk.Button(self, text="Submit Request", style = "RW.TButton", command=self.userRequest).grid(column=2, row=4, sticky=(N,S,E,W))
 		# pad each widget with 5 pixels on each side to ensure that the buttons do not stay together. 
 		for child in self.winfo_children(): child.grid_configure(padx=5, pady=5)
 
@@ -55,10 +59,6 @@ class JuneLabClusteringGUI(ttk.Frame):
 	def home(self):
 		self.master.destroy()
 		RI.reinit()
-		# objects = self.grid_slaves()
-		# for i in objects:
-		# 	i.destroy()
-		# self.create_widgets()
 
 
 	def createClustergram(self):
@@ -123,6 +123,7 @@ class JuneLabClusteringGUI(ttk.Frame):
 			GU.linkageComparison(file,num_comps,linkList)
 
 		objects = self.grid_slaves()
+		print(objects)
 		for i in objects:
 			i.destroy()
 
@@ -162,13 +163,10 @@ class JuneLabClusteringGUI(ttk.Frame):
 	    GU.dataIntegrity(filename)
 
 	def mstF(self):
-		objects = self.grid_slaves()
-		for i in objects:
-			i.destroy()
-		self.JuneLab = ttk.Label(self, text="Close MST Validation graph prior to running Ensemble!!",foreground="red",font=("TkHeadingFont",24)).grid(column=0,row=1,sticky=(N))
-		self.ok = ttk.Button(self,text="OK",command=self.ensemble).grid(column=0,row=2,sticky=(N))
-		GU.MST()
-
+		numClust = GU.MST(func='ensemble')
+		numClust = int(numClust)
+		print(numClust)
+		GU.ensembleClustering(optNum = numClust)
 
 	def ensemble(self):
 		def ensembleOutput(*args):
@@ -204,11 +202,55 @@ class JuneLabClusteringGUI(ttk.Frame):
 
 	def mst(self):
 	    #send the user to the minimum spanning tree function.
-	    GU.MST()
+	    GU.MST(func="base")
 
 	def generate(self):
 	    #ask the user to select the file in which will be used to create a minimum spanning tree.
 	    GU.PDFGenerator()
+
+	def userRequest(self):
+
+		def generateRequest():
+			#create the pdf and title for each page
+			pdf = fpdf.FPDF('P','mm','Letter')
+
+			#Create the title and set the default font
+			directory = 'C:/Users/Public/Documents/Requests'
+			os.chdir(directory)
+
+			#determine the current user
+			curUser = getpass.getuser()
+			curUser = GB.who(curUser)
+			title = 'User Request' + '-' + curUser
+			pdf.add_page()
+			pdf.set_font('Arial', 'B', 24)
+			fileName = curUser + '.pdf'
+			pdf.output(fileName, 'F')
+
+		objects = self.grid_slaves()
+		for i in objects:
+			i.destroy()
+		# #Generates User Request PDF
+		# canvas = tk.Canvas(width = 400, height = 800)
+		# canvas.pack()
+
+		# label = ttk.Label(self, text = 'Submit User Request')
+		# label.config(font = ('helvetica', 14))
+		# canvas.create_window(200, 25, window = label)
+
+		entrytitle = ttk.Entry(self).grid(column=0,row=1,columnspan=4, pady=3)
+		entrybody = ttk.Entry(self).grid(column=0,row=3,columnspan=4, pady=3)
+		labelTitle = ttk.Label(self, text='Title').grid(row=0)
+		labelBody = ttk.Label(self, text='Description').grid(row=2)
+
+		# canvas.create_window(200, 700, window = entrytitle)
+		# canvas.create_window(200, 600, window = entrybody)
+		buttonSubmit = ttk.Button(self,text = 'Submit Request', command = generateRequest).grid(column=0, columnspan=4)
+		# canvas.create_window(200, 100, window = buttonSubmit)
+		
+
+
+		
 
 
 curUser = getpass.getuser()
